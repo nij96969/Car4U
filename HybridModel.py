@@ -7,7 +7,7 @@ from sklearn.decomposition import TruncatedSVD
 import numpy as np
 
 # Load the dataset
-cars_data = pd.read_csv(r"D:\Car4U\Dataset\cars_data_clean.csv")
+cars_data = pd.read_csv(r".......\cars_data_clean.csv")
 
 # Select relevant features for recommendation
 features = [
