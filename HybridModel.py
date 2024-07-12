@@ -7,7 +7,7 @@ from sklearn.decomposition import TruncatedSVD
 import numpy as np
 
 # Load the dataset
-cars_data = pd.read_csv(r".......\cars_data_clean.csv")
+cars_data = pd.read_csv(r"Dataset\cars_data_clean.csv")
 
 # Select relevant features for recommendation
 features = [
@@ -44,6 +44,23 @@ preprocessor = ColumnTransformer(
     ]
 )
 
+# Define default fill values for each column type
+fill_values = {
+    'listed_price': 0,
+    'myear': 0,
+    'body': 'Unknown',
+    'transmission': 'Unknown',
+    'fuel': 'Unknown',
+    'km': 0,
+    'Engine Type': 'Unknown',
+    'Length': 0.0,
+    'Width': 0.0,
+    'Height': 0.0,
+    'Max Power Delivered': 0,
+    'Color': 'Unknown',
+    'model': 'Unknown',
+    'images': 'No Image'
+}
 
 # Function to get recommendations based on KNN (content-based)
 def get_knn_recommendations(user_transformed, knn_model, n_neighbors=10):
@@ -97,6 +114,9 @@ def hybrid_model(user_data):
     hybrid_indices = get_hybrid_recommendations(user_transformed, user_transformed_svd, X_svd, knn, n_neighbors=10)
 
     recommended_cars = cars_filtered_required_data.iloc[hybrid_indices]
+    
+    # Fill NaN values for specified features
+    recommended_cars.fillna(fill_values, inplace=True)
 
     return recommended_cars
 

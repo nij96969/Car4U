@@ -1,17 +1,26 @@
-import streamlit as st
-import pandas as pd
-import ast
-from HybridModel import hybrid_model
+import streamlit as st , pandas as pd
+import requests
+import ast , io
 
+def write_file(content, output_path):
+    with open(output_path, 'w') as file:
+        file.write(content)
 # Load the dataset
-cars_data = pd.read_csv(r".....\cars_data_clean.csv")
+@st.cache_data # Use @st.cache to cache the dataset fetching function
+def fetch_dataset():
+    response = requests.get("http://localhost:8000/dataset/")  # Use GET request since you're fetching data
+    df = pd.read_csv(io.StringIO(response.text))  # Convert to DataFrame
+    return df
 
-#Total features
+cars_data = fetch_dataset()
+
+# Total features
 overall_features = [
     'listed_price', 'myear', 'body', 'transmission', 'fuel', 'km',
     'Engine Type', 'Length', 'Width', 'Height', 'Max Power Delivered', 'Color' ,
     'model' , 'images'
 ]
+
 # List of numerical and categorical features
 numerical_features = ['listed_price', 'myear', 'Length',]
 categorical_features = ['body', 'transmission', 'fuel', 'Color']
@@ -40,6 +49,7 @@ with st.form(key="feature"):
         max_value=numerical_ranges['listed_price'][1],
         value=st.session_state.inputs['listed_price']
     )
+
     # Sliders for other numerical features
     st.header("Select values for other numerical features")
     for feature in numerical_features:
@@ -54,7 +64,6 @@ with st.form(key="feature"):
 
     # Dropdowns for categorical features
     st.header("Select values for categorical features")
-
     for feature in categorical_features:
         unique_values = cars_data[feature].unique().tolist()
         inputs_features[feature] = st.selectbox(
@@ -67,16 +76,15 @@ with st.form(key="feature"):
 
 if submitted:
     st.subheader("Recommendations")
-    cars_recommendation = hybrid_model(inputs_features)
+    response = requests.post("http://127.0.0.1:8000/recommendations/", json=inputs_features)
+    cars_recommendation = pd.DataFrame(response.json())
 
-    if cars_recommendation.shape[0] == 0 : 
+    if cars_recommendation.shape[0] == 0:
         st.write("No Recommendation Available")
 
     for idx, row in cars_recommendation.iterrows():
         with st.expander(f"{row['model']}"):
-            # Display each feature and its value for the current row
-
-            car_link_dict = ast.literal_eval(row['images'])  # Convert the string representation of the list to an actual list
+            car_link_dict = ast.literal_eval(row['images'])
             if car_link_dict[0]['img'] != "":
                 car_link = car_link_dict[0]['img']
                 st.image(car_link, caption=row['model'], use_column_width=True)
